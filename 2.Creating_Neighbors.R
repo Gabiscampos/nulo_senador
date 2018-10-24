@@ -10,12 +10,14 @@ rm(list=ls())
 # Packages and Working Directory #
 packages<-c("rgdal", "spdep", "cepespR"); lapply(packages, require, character.only=T) # install if needed
 
-setwd("/Users/robertaazzi1/Desktop/Nulo_Senador/") # Change HERE
+#setwd("/Users/robertaazzi1/Desktop/Nulo_Senador/") # Change HERE
 
 ###########################
 # Acess to the shapefile: #
 # https://mapas.ibge.gov.br/bases-e-referenciais/bases-cartograficas/malhas-digitais #
-shp<-readOGR("Shapefiles/br_municipios/BRMUE250GC_SIR.shp")
+#shp<-readOGR("Shapefiles/br_municipios/BRMUE250GC_SIR.shp")
+shp<-readOGR("br_municipios/BRMUE250GC_SIR.shp")
+
 head(shp@data); nrow(shp@data)
 
 # Creating the datasets of neighboring cities
@@ -65,6 +67,7 @@ matching[[which(n_states>3)[1]]] # First case the city borders three states
 data<-do.call(rbind, matching)
 head(data); nrow(data); table(data$two_states)
 
-write.table(data, "Data/BR_mun_neighbors.txt", fileEncoding="latin1")
+#write.table(data, "Data/BR_mun_neighbors.txt", fileEncoding="latin1")
+write.csv(data, "Data/BR_mun_neighbors.csv")
 
 

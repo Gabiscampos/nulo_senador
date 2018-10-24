@@ -182,11 +182,14 @@ data_politics %>%
   geom_boxplot()
 #voto na legenda do PSDB tem mediana bem próxima a do PT e maior variância 
 
-data_politics %>% mutate(regiao = substr(COD_MUN_IBGE,1,1)) %>% 
+PLV_2014<-data_politics %>% mutate(regiao = substr(COD_MUN_IBGE,1,1)) %>% 
   select(regiao, COD_MUN_IBGE, votos_PT_PLV_pc, votos_PSDB_PLV_pc, votos_PSB_PLV_pc) %>% 
   gather(variavel, valor, 3:5) %>% 
   ggplot(aes(x = regiao,  y=valor)) + 
-  geom_boxplot(aes(fill=variavel))
+  geom_boxplot(aes(fill=variavel)) +
+  scale_y_continuous(limits = c(0,10))
+
+PLV_2014
 #grande varição entre regiões com PT mantendo votação no partido mais constante -
 #PSDB tem maior nível de votação na legenda no sudeste, não igualado por nenhum partido em outros estados
 

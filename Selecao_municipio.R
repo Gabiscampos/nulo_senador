@@ -12,6 +12,7 @@ library(cepespR)
 library(ggplot2)
 library(Zelig)
 
+
 #Script for data download - source: Cepesp Data ------------------------------------------
 
 #Downloand PT voting for president
@@ -52,7 +53,7 @@ ggplot(perc_vote, aes(x=perc_votos_presPT, y=PT_party_vote)) +
   geom_point(shape=1) + stat_smooth(method=lm)
 
 #Merge voting data with municipality neighbourhood information
-load("mun_pairs.RData")
+mun_pairs<-read.csv("Data/BR_mun_neighbors.csv")
 
 mun_pairs<-left_join(mun_pairs, perc_vote, by = c("CD_GEOCMU"="COD_MUN_IBGE"))
 rm(perc_vote)
@@ -89,7 +90,8 @@ analysis_2$dif_PT_candidate<-analysis_2$Ref_PT_candidate - analysis_2$Comp_PT_ca
 analysis_2$dif_PT_party_vote<-analysis_2$Ref_PT_party_vote - analysis_2$Comp_PT_party_vote
 analysis_2$dif_perc_votos_presPT<-analysis_2$Ref_perc_votos_presPT - analysis_2$Comp_perc_votos_presPT
 
-(stat.desc(analysis_2[,c("dif_Other_party_vote", "dif_PT_party_vote", "dif_PT_candidate", "dif_perc_votos_presPT")]))
+x<-as.tibble(stat.desc(analysis_2[,c("Ref_Other_party_vote", "Ref_PT_party_vote", "Ref_PT_candidate", "Ref_perc_votos_presPT")]))
+
 
 qplot(analysis_2$Ref_PT_party_vote, geom="histogram") 
 qplot(analysis_2$dif_PT_party_vote, geom="histogram")+  geom_histogram() 
@@ -98,12 +100,12 @@ qplot(analysis_2$dif_PT_party_vote, geom="histogram")+  geom_histogram()
 analysis_3a<-analysis_1 %>% select(-pair) %>%  group_by(mun_base) %>% summarise_all(funs(mean, sd))
 
 #Mean and standard deviation
-ggplot(analysis_3, aes(x=mun_base, y=PT_party_vote_mean)) + 
+ggplot(analysis_3a, aes(x=mun_base, y=PT_party_vote_mean)) + 
   geom_errorbar(aes(ymin=PT_party_vote_mean-PT_party_vote_sd, ymax=PT_party_vote_mean+PT_party_vote_sd), width=.1) +
   #  geom_line() +
   geom_point() + ggtitle("PT party vote balance")
 
-ggplot(analysis_3, aes(x=mun_base, y=perc_votos_presPT_mean)) + 
+ggplot(analysis_3a, aes(x=mun_base, y=perc_votos_presPT_mean)) + 
   geom_errorbar(aes(ymin=perc_votos_presPT_mean-perc_votos_presPT_sd, ymax=perc_votos_presPT_mean+perc_votos_presPT_sd), width=.1) +
   #  geom_line() +
   geom_point() + ggtitle("PT president vote balance")
@@ -208,13 +210,14 @@ voting_senador <- voting_senador %>% group_by(ANO_ELEICAO, UF, NUMERO_PARTIDO, N
   summarise(QTDE_VOTOS=sum(QTDE_VOTOS)) %>% ungroup() %>% group_by(ANO_ELEICAO,UF) %>% 
   mutate(VOTOS_UF=sum(QTDE_VOTOS)) %>% mutate(perc_vot_candidate=QTDE_VOTOS/VOTOS_UF)
 
-#create the dummy for threatment states
+#create the dummy for treatment states
 tret_dummy<- voting_senador %>% group_by(ANO_ELEICAO, UF) %>%
   mutate(d1=ifelse(NUMERO_PARTIDO==13,1,0)) %>% 
   mutate(d2=ifelse(NUMERO_PARTIDO==13 | NUMERO_PARTIDO==45, 1, 0)) %>% 
   mutate(d3=ifelse(NUMERO_PARTIDO==13 & perc_vot_candidate==max(perc_vot_candidate),1,0)) %>% 
   mutate(d4=ifelse((NUMERO_PARTIDO==13 | NUMERO_PARTIDO==45)&perc_vot_candidate==max(perc_vot_candidate),1,0)) %>% 
-  select(ANO_ELEICAO, UF, d1, d2, d3, d4) %>% ungroup() %>% 
+  mutate(num_cand=n_distinct(NUMERO_PARTIDO)) %>% 
+    select(ANO_ELEICAO, UF, d1, d2, d3, d4, num_cand) %>% ungroup() %>% 
   group_by(ANO_ELEICAO, UF) %>% summarise_all(funs(max))
 
 #lets select only 2014 for the analysis
@@ -229,4 +232,4 @@ tret_dummy %>% filter(d4==1)
 
 elections_senador<-left_join(elections_senador, tret_dummy, by = "UF")
 
-lm(`2014` ~ `2006`+d1, elections_senador)
+lm(`2014` ~ `2006`+d2, elections_senador)
